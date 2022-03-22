@@ -1,0 +1,17 @@
+.vs
+.DS_Store
+.idea
+*.iml
+
+venv
+build
+out
+target
+
+*.egg-info/
+.pytest_cache
+__pycache__
+.coverage
+htmlcov
+
+*.db
