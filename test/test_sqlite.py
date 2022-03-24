@@ -2,34 +2,35 @@ import math
 import re
 
 import pytest
-from namegen import driver_sqlite
-from namegen.driver_sqlite import start, stop, generate
+
+from namegen.driver_sqlite import SQLiteDriver
 
 PATTERN = re.compile(r'^.+#\d{4}$')
 
 
 @pytest.fixture(autouse=True)
-def start_stop():
-    start()
-    yield
-    stop()
+def driver():
+    driver = SQLiteDriver()
+    driver.start()
+    yield driver
+    driver.stop()
 
 
 @pytest.fixture()
-def c(start_stop):
-    conn = driver_sqlite.connection
+def c(driver):
+    conn = driver.connection
     c = conn.cursor()
     yield c
     c.close()
 
 
-def test_generate_pattern():
+def test_generate_pattern(driver):
     for i in range(0, 10_000):
-        name = generate()
+        name = driver.generate()
         assert PATTERN.match(name)
 
 
-def test_generate_state_rollover(c):
+def test_generate_state_rollover(driver, c):
     c.execute(
         """
         UPDATE state SET 
@@ -39,7 +40,7 @@ def test_generate_state_rollover(c):
         """
     )
 
-    generate()
+    driver.generate()
 
     c.execute('SELECT next_start_id, next_end_id, current_count FROM state')
     data = c.fetchone()
@@ -48,35 +49,35 @@ def test_generate_state_rollover(c):
     assert data[2] == 1
 
 
-def test_periods(c):
+def test_periods(driver, c):
     c.execute('SELECT COUNT(*) FROM start')
     start, = c.fetchone()
     c.execute('SELECT COUNT(*) FROM end')
     end, = c.fetchone()
 
-    data = set(map(lambda _: generate().split('#')[0], range(0, math.lcm(start, end))))
+    data = set(map(lambda _: driver.generate().split('#')[0], range(0, math.lcm(start, end))))
     assert len(data) == math.lcm(start, end)
-    assert generate().split('#')[0] in data
+    assert driver.generate().split('#')[0] in data
 
 
 @pytest.mark.skip  # Passes
-def test_format(c):
+def test_format(driver, c):
     c.execute('SELECT COUNT(*) FROM start')
     start, = c.fetchone()
     c.execute('SELECT COUNT(*) FROM end')
     end, = c.fetchone()
 
-    data = set(map(lambda _: generate(), range(0, math.lcm(start, end) * 10_000)))
+    data = set(map(lambda _: driver.generate(), range(0, math.lcm(start, end) * 10_000)))
     assert len(data) == math.lcm(start, end) * 10_000
     assert len(list(filter(lambda s: not re.match(r'^.+#\d{4}$', s), data))) == 0
 
 
-def test_throws_none():
-    stop()
+def test_throws_none(driver):
+    driver.stop()
     with pytest.raises(ValueError):
-        generate()
+        driver.generate()
 
 
-def test_start_twice_no_throw():
-    start()
-    generate()
+def test_start_twice_no_throw(driver):
+    driver.start()
+    driver.generate()

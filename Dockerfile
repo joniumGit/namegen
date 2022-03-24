@@ -17,4 +17,4 @@ RUN apk add --no-cache sqlite
 COPY ./db.sql .
 RUN sqlite3 namegen.db < db.sql
 
-CMD uvicorn --port 80 --host 0.0.0.0 --workers 1 --no-access-log namegen:app
+CMD uvicorn --port 80 --host 0.0.0.0 --workers 1 --no-access-log namegen.server:app

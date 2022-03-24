@@ -2,21 +2,27 @@ import math
 import re
 
 import pytest
-from namegen.driver_memory import LCG_MIN as MIN, LCG_MAX as MAX
-from namegen.driver_memory import start, stop, load_state, START, END, COUNTS, generate, generate_name
+
+from namegen.driver_memory import MemoryDriver
 
 
 @pytest.fixture(scope='session', autouse=True)
-def setup():
-    start()
-    stop()
-    yield
+def driver():
+    driver = MemoryDriver()
+    driver.start()
+    driver.stop()
+    yield driver
 
 
 @pytest.fixture(scope='function', autouse=True)
-def setup_stage_2(setup):
-    load_state()
+def driver_load(driver):
+    driver.load_state()
     yield
+
+
+@pytest.fixture
+def lcm(driver):
+    yield math.lcm(len(driver.words_start), len(driver.words_end))
 
 
 @pytest.mark.parametrize('n', [
@@ -25,33 +31,34 @@ def setup_stage_2(setup):
     10_000,
     50_000
 ])
-def test_namegen(n):
+def test_namegen(driver, n):
     for _ in range(0, 100):
-        data = set(map(lambda _: generate(), range(0, n)))
+        data = set(map(lambda _: driver.generate(), range(0, n)))
         assert len(data) == n
 
 
-def test_periods():
-    data = set(map(lambda _: generate_name()[0], range(0, math.lcm(len(START), len(END)))))
-    assert len(data) == math.lcm(len(START), len(END))
-    assert generate_name()[0] in data
+def test_periods(driver, lcm):
+    data = set(map(lambda _: driver.generate_name()[0], range(0, lcm)))
+    assert len(data) == lcm
+    assert driver.generate_name()[0] in data
 
 
 @pytest.mark.skip  # Passes
-def test_format():
-    data = set(map(lambda _: generate(), range(0, math.lcm(len(START), len(END)) * (MAX - MIN))))
-    assert len(data) == math.lcm(len(START), len(END)) * (MAX - MIN)
+def test_format(driver, lcm):
+    data = set(map(lambda _: driver.generate(), range(0, lcm)))
+    assert len(data) == lcm * (driver.serail_max - driver.serial_min)
     assert len(list(filter(lambda s: not re.match(r'^.+#\d{4}$', s), data))) == 0
 
 
-def test_save_load():
-    for _ in range(0, len(COUNTS)):
-        COUNTS.append(int(COUNTS.popleft() * 0))
-    COUNTS[0] = 1
-    stop()
-    value1 = generate()
-    COUNTS[0] = 2
-    start()
-    assert COUNTS[0] == 1
-    value2 = generate()
+def test_save_load(driver):
+    cnt = driver.words_cnt
+    for _ in range(0, len(cnt)):
+        cnt.append(int(cnt.popleft() * 0))
+    cnt[0] = 1
+    driver.stop()
+    value1 = driver.generate()
+    cnt[0] = 2
+    driver.start()
+    assert cnt[0] == 1
+    value2 = driver.generate()
     assert value1 == value2

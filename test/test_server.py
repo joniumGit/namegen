@@ -1,7 +1,8 @@
 import re
 
 from fastapi.testclient import TestClient
-from namegen import app
+
+from namegen.server import app
 
 
 def test_get():

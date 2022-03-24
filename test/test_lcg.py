@@ -1,4 +1,7 @@
-from namegen.driver_memory import generate_next, LCG_MIN as MIN, LCG_MAX as MAX
+from namegen.driver_memory import generate_next, MemoryDriver
+
+MAX = MemoryDriver.serial_max
+MIN = MemoryDriver.serial_min
 
 
 def test_full_cycle():

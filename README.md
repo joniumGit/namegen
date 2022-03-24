@@ -2,14 +2,27 @@
 
 #### Two drivers are available:
 
-- SQLite - persists as sqlite database (safer storage and manipulation)
-- Memory - persists as compressed file on disk (faster generation)
+- SQLite - persists as sqlite database
+    - Might be safer storage and portable
+    - Slower
+- Memory - persists as compressed file on disk
+    - Saves as compressed file on disk
+    - Not as portable
+    - Much Faster
 
 #### Test
 
 - Coverage is 100%
 - Two tests are marked _skip_ because of comparatively long runtime
     - These generate all values available
+
+#### Generation Speed
+
+```
+1000 Samples:
+- Memory: 0.5-0.8 ms
+- SQLite: 30-90 ms
+```
 
 #### Notes
 
