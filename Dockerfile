@@ -1,4 +1,4 @@
-FROM python:3.9-alpine AS worker
+FROM python:3.10-alpine AS worker
 WORKDIR /build
 RUN python -m pip install --upgrade pip && python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -7,7 +7,7 @@ COPY ./README.md .
 COPY ./src ./src
 RUN pip install .[runnable]
 
-FROM python:3.9-alpine
+FROM python:3.10-alpine
 COPY --from=worker /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /opt/namegen

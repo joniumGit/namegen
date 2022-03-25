@@ -15,3 +15,5 @@ __pycache__
 htmlcov
 
 *.db
+*.db-*
+namegen-state

@@ -1,4 +1,3 @@
-import math
 import re
 
 import pytest
@@ -22,7 +21,8 @@ def driver_load(driver):
 
 @pytest.fixture
 def lcm(driver):
-    yield math.lcm(len(driver.words_start), len(driver.words_end))
+    from namegen.driver_memory import lcm
+    yield lcm(len(driver.words_start), len(driver.words_end))
 
 
 @pytest.mark.parametrize('n', [

@@ -1,4 +1,3 @@
-import math
 import re
 
 import pytest
@@ -22,6 +21,16 @@ def c(driver):
     c = conn.cursor()
     yield c
     c.close()
+
+
+@pytest.fixture
+def lcm(driver, c):
+    from namegen.driver_memory import lcm
+    c.execute('SELECT COUNT(*) FROM start')
+    start, = c.fetchone()
+    c.execute('SELECT COUNT(*) FROM end')
+    end, = c.fetchone()
+    yield lcm(start, end)
 
 
 def test_generate_pattern(driver):
@@ -49,26 +58,16 @@ def test_generate_state_rollover(driver, c):
     assert data[2] == 1
 
 
-def test_periods(driver, c):
-    c.execute('SELECT COUNT(*) FROM start')
-    start, = c.fetchone()
-    c.execute('SELECT COUNT(*) FROM end')
-    end, = c.fetchone()
-
-    data = set(map(lambda _: driver.generate().split('#')[0], range(0, math.lcm(start, end))))
-    assert len(data) == math.lcm(start, end)
+def test_periods(driver, lcm):
+    data = set(map(lambda _: driver.generate().split('#')[0], range(0, lcm)))
+    assert len(data) == lcm
     assert driver.generate().split('#')[0] in data
 
 
 @pytest.mark.skip  # Passes
-def test_format(driver, c):
-    c.execute('SELECT COUNT(*) FROM start')
-    start, = c.fetchone()
-    c.execute('SELECT COUNT(*) FROM end')
-    end, = c.fetchone()
-
-    data = set(map(lambda _: driver.generate(), range(0, math.lcm(start, end) * 10_000)))
-    assert len(data) == math.lcm(start, end) * 10_000
+def test_format(driver, lcm):
+    data = set(map(lambda _: driver.generate(), range(0, lcm * 10_000)))
+    assert len(data) == lcm * 10_000
     assert len(list(filter(lambda s: not re.match(r'^.+#\d{4}$', s), data))) == 0
 
 

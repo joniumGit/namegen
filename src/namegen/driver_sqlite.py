@@ -4,7 +4,7 @@ import typing
 from .driver import Driver
 
 
-def make_camel(w: str):
+def camel(w: str):
     return w[0].upper() + w[1:]
 
 
@@ -90,7 +90,7 @@ class SQLiteDriver(Driver):
                 (self.max_start, self.max_end)
             )
             cur.close()
-        return f'{make_camel(start_part)}{make_camel(end_part)}#{sequence:04d}'
+        return f'{camel(start_part)}{camel(end_part)}#{sequence:04d}'
 
 
 __all__ = ['SQLiteDriver']

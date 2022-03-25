@@ -4,11 +4,16 @@
 
 - SQLite - persists as sqlite database
     - Might be safer storage and portable
-    - Slower
+    - Slow
 - Memory - persists as compressed file on disk
     - Saves as compressed file on disk
     - Not as portable
     - Much Faster
+    - Constant memory use
+- Hybrid
+    - Fastest
+    - Offloads saving to another thread (SQLite)
+    - Uses more memory
 
 #### Test
 

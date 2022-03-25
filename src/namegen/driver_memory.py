@@ -8,6 +8,13 @@ from typing import TextIO
 
 from .driver import Driver
 
+try:
+    from math import lcm
+except ImportError:
+    def lcm(a, b):
+        import math
+        return int(a * b / math.gcd(a, b))
+
 
 def generate_next(previous: int) -> int:
     return (21 * previous + 1) % 10_000
@@ -15,12 +22,7 @@ def generate_next(previous: int) -> int:
 
 def hashit(file: str) -> str:
     with open(file, 'rb') as wf:
-        return base64.b64encode(
-            hashlib.sha256(
-                wf.read(),
-                usedforsecurity=False
-            ).digest()
-        ).decode('ascii')
+        return base64.b64encode(hashlib.sha256(wf.read()).digest()).decode('ascii')
 
 
 class MemoryDriver(Driver):
@@ -63,7 +65,6 @@ class MemoryDriver(Driver):
 
     def start(self):
         if not self.load_state():
-            import math
             with open('wordlist.txt', 'r') as f:
                 data = f.read().splitlines()
             split = data.index('#split')
@@ -71,7 +72,7 @@ class MemoryDriver(Driver):
             self.words_end.extend(set(w[0].upper() + w[1:] for w in data[split + 1:]))
             self.words_cnt.extend(
                 random.randint(self.serial_min, self.serial_max)
-                for _ in range(0, math.lcm(len(self.words_start), len(self.words_end)))
+                for _ in range(0, lcm(len(self.words_start), len(self.words_end)))
             )
 
     def stop(self):
