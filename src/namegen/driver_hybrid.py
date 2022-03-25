@@ -81,33 +81,36 @@ class HybridDriver(Driver):
         self.running = False
 
     def _watch(self):
-        self.running = True
         conn = self.connection
         q = self.event_queue
         max_start = self.max_start
         max_end = self.max_end
 
         def handler():
-            start, end, next_value = q.popleft()
-            conn.execute(
-                """
-                UPDATE sequences SET 
-                    next_value = ?,
-                    count = count + 1
-                WHERE start_id = ? AND end_id = ?
-                """,
-                (next_value, start, end)
-            )
-            conn.execute(
-                """
-                UPDATE state SET
-                    next_start_id = ?,
-                    next_end_id = ?,
-                    current_count = current_count + 1
-                """,
-                (min((start + 1, max_start)), min((end + 1, max_end)))
-            )
+            with conn:
+                start, end, next_value = q.popleft()
+                next_start = start + 1 if start < max_start else 1
+                next_end = end + 1 if end < max_end else 1
+                conn.execute(
+                    """
+                    UPDATE sequences SET 
+                        next_value = ?,
+                        count = count + 1
+                    WHERE start_id = ? AND end_id = ?
+                    """,
+                    (next_value, start, end)
+                )
+                conn.execute(
+                    """
+                    UPDATE state SET
+                        next_start_id = ?,
+                        next_end_id = ?,
+                        current_count = current_count + 1
+                    """,
+                    (next_start, next_end)
+                )
 
+        time.sleep(10E-3)  # Initial startup
         while self.running:
             try:
                 handler()
@@ -121,6 +124,8 @@ class HybridDriver(Driver):
             pass
 
     def start(self):
+        if self.running:
+            return
         conn = self.connection
         if conn is None:
             conn = sqlite_init(self.DB_NAME)
@@ -167,9 +172,12 @@ class HybridDriver(Driver):
 
                 c.close()
             self.connection = conn
+        self.running = True
         self.worker.start()
 
     def stop(self):
+        if not self.running:
+            return
         self.running = False
         self.worker.join()
         conn = self.connection
@@ -178,6 +186,8 @@ class HybridDriver(Driver):
             conn.close()
 
     def generate(self):
+        if not self.running:
+            raise ValueError('Not Running')
         o = self.queue.popleft()
         try:
             return f'{o.start.value}{o.end.value}#{o.value:04d}'

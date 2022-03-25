@@ -1,18 +1,23 @@
 import os
+from typing import Optional
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-__driver_choice = os.getenv('NAMEGEN_DRIVER', 'memory').lower()
-if __driver_choice == 'sqlite':  # pragma nocover
-    from ..driver_sqlite import SQLiteDriver as Driver
-elif __driver_choice == 'hybrid':
-    from ..driver_hybrid import HybridDriver as Driver
-else:
-    from ..driver_memory import MemoryDriver as Driver
+
+def _import_driver(choice: Optional[str]):
+    choice = choice.lower() if choice is not None else ''
+    if choice == 'sqlite':
+        from ..driver_sqlite import SQLiteDriver as Driver
+    elif choice == 'memory':
+        from ..driver_memory import MemoryDriver as Driver
+    else:
+        from ..driver_hybrid import HybridDriver as Driver
+    return Driver()
+
 
 app = FastAPI()
-driver = Driver()
+driver = _import_driver(os.getenv('NAMEGEN_DRIVER'))
 
 
 class Name(BaseModel):

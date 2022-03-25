@@ -1,1 +1,1 @@
-uvicorn gentest:app
+uvicorn --reload gentest:app

@@ -11,7 +11,7 @@
     - Much Faster
     - Constant memory use
 - Hybrid
-    - Fastest
+    - Pretty much as fast as the memory one
     - Offloads saving to another thread (SQLite)
     - Uses more memory
 
