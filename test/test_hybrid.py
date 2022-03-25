@@ -13,12 +13,13 @@ def driver():
     driver = HybridDriver()
     driver.start()
     yield driver
+    driver.event_queue.clear()
     driver.stop()
 
 
 @pytest.fixture
 def lcm(driver):
-    from namegen.driver_memory import lcm
+    from namegen.utils import lcm
     c = driver.connection.cursor()
     c.execute('SELECT COUNT(*) FROM start')
     start, = c.fetchone()

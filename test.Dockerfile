@@ -5,7 +5,7 @@ WORKDIR /opt/namegen
 COPY ./setup.py .
 COPY ./README.md .
 COPY ./src ./src
-COPY ./wordlist.txt .
+COPY ./wordlist.csv .
 RUN pip install .[dev]
 
 COPY ./db.sql .

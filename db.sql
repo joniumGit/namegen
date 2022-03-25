@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sequences
     next_value INTEGER NOT NULL DEFAULT (ABS(RANDOM() % 10000)),
     count      INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (start_id, end_id)
-) WITHOUT ROWID;
+);
 
 CREATE TABLE IF NOT EXISTS state
 (
@@ -28,45 +28,3 @@ CREATE TABLE IF NOT EXISTS state
 
 INSERT INTO state DEFAULT
 VALUES;
-
-INSERT INTO start (value)
-VALUES ('golden'),
-       ('slow'),
-       ('lovely'),
-       ('lucky'),
-       ('fine'),
-       ('clever'),
-       ('quiet'),
-       ('calm'),
-       ('sturdy'),
-       ('courageous'),
-       ('fast'),
-       ('confident'),
-       ('bright'),
-       ('lively'),
-       ('friendly'),
-       ('cool'),
-       ('awesome');
-
-INSERT INTO end (value)
-VALUES ('adventurer'),
-       ('hero'),
-       ('squirrel'),
-       ('butterfly'),
-       ('scientist'),
-       ('fellow'),
-       ('hedgehog'),
-       ('fox'),
-       ('wolf'),
-       ('bear'),
-       ('fish'),
-       ('swan'),
-       ('owl'),
-       ('player'),
-       ('whale'),
-       ('crow');
-
-INSERT INTO sequences (start_id, end_id)
-SELECT s.id, e.id
-FROM start s
-         CROSS JOIN end e;

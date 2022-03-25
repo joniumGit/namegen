@@ -5,32 +5,17 @@ import time
 import typing
 
 from .driver import Driver
-
-
-def sqlite_init(database: str) -> sqlite3.Connection:
-    connection = sqlite3.connect(database, check_same_thread=False)
-    with connection:
-        c = connection.cursor()
-        c.execute(f'PRAGMA mmap_size = {get_expected_mmap_size(database)}')
-        c.execute('PRAGMA journal_mode = WAL')
-        c.execute('PRAGMA synchronous = normal')
-        c.execute('PRAGMA temp_store = memory')
-        c.execute('PRAGMA optimize')
-        c.close()
-    return connection
-
-
-def get_expected_mmap_size(file: str) -> int:
-    import pathlib
-    return int(pathlib.Path(file).stat().st_size * 1.2)
+from .utils import sqlite_init, generate_next
 
 
 class Item:
     __slots__ = ['id', 'value']
+    id: int
+    value: str
 
     def __init__(self, _id: int, _value: str):
         self.id = _id
-        self.value = _value[0].upper() + _value[1:]
+        self.value = _value
 
 
 class Counter:
@@ -44,25 +29,20 @@ class Counter:
         self.start = _start
         self.end = _end
 
-    def inc(self) -> int:
-        v = self.value
-        v = (21 * v + 1) % 10_000
-        self.value = v
-        return v
+    def next(self) -> typing.Tuple[int, int, int]:
+        self.value = generate_next(self.value)
+        return self.start.id, self.end.id, self.value
 
 
 class HybridDriver(Driver):
-    DB_NAME = 'namegen.db'
-
     __slots__ = [
         'connection',
         'max_start',
         'max_end',
         'queue',
         'event_queue',
-        'running'
+        'running',
     ]
-
     connection: typing.Optional[sqlite3.Connection]
     max_start: int
     max_end: int
@@ -128,18 +108,14 @@ class HybridDriver(Driver):
             return
         conn = self.connection
         if conn is None:
-            conn = sqlite_init(self.DB_NAME)
+            conn = sqlite_init()
             with conn:
                 c = conn.cursor()
-
-                c.execute('SELECT MAX(id) FROM start ORDER BY id ASC')
+                c.execute('SELECT MAX(id) FROM start')
                 max_start = int(c.fetchone()[0])
-
-                c.execute('SELECT MAX(id) FROM end ORDER BY id ASC')
+                c.execute('SELECT MAX(id) FROM end')
                 max_end = int(c.fetchone()[0])
-
                 self.max_start, self.max_end = max_start, max_end
-
                 c.execute(
                     """
                     SELECT 
@@ -147,27 +123,27 @@ class HybridDriver(Driver):
                         s.value,
                         e.id,
                         e.value, 
-                        sq.count 
+                        sq.next_value 
                     FROM sequences sq
                         JOIN start s ON s.id = sq.start_id
                         JOIN end e ON e.id = sq.end_id
-                    ORDER BY sq.start_id, sq.end_id ASC
+                    ORDER BY sq.ROWID
                     """
                 )
-                for start_id, start, end_id, end, count in c.fetchall():
+                for start_id, start, end_id, end, value in c.fetchall():
                     self.queue.append(
                         Counter(
                             Item(int(start_id), start),
                             Item(int(end_id), end),
-                            int(count)
+                            int(value)
                         )
                     )
-
                 c.execute('SELECT next_start_id, next_end_id FROM state')
                 next_start, next_end = c.fetchone()
                 next_start, next_end = int(next_start), int(next_end)
 
-                while self.queue[0].start.id != next_start or self.queue[0].end.id != next_end:
+                # Regain state
+                while next_start != self.queue[0].start.id or next_end != self.queue[0].end.id:
                     self.queue.rotate(-1)
 
                 c.close()
@@ -192,7 +168,7 @@ class HybridDriver(Driver):
         try:
             return f'{o.start.value}{o.end.value}#{o.value:04d}'
         finally:
-            self.event_queue.append((o.start.id, o.end.id, o.inc()))
+            self.event_queue.append(o.next())
             self.queue.append(o)
 
 

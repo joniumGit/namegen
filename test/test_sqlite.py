@@ -25,7 +25,7 @@ def c(driver):
 
 @pytest.fixture
 def lcm(driver, c):
-    from namegen.driver_memory import lcm
+    from namegen.utils import lcm
     c.execute('SELECT COUNT(*) FROM start')
     start, = c.fetchone()
     c.execute('SELECT COUNT(*) FROM end')

@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from ..driver import Driver
+
 
 def _import_driver(choice: Optional[str]):
     choice = choice.lower() if choice is not None else ''
@@ -17,7 +19,7 @@ def _import_driver(choice: Optional[str]):
 
 
 app = FastAPI()
-driver = _import_driver(os.getenv('NAMEGEN_DRIVER'))
+driver: Driver
 
 
 class Name(BaseModel):
@@ -47,6 +49,8 @@ async def get_name():
 
 @app.on_event('startup')
 async def startup():
+    global driver
+    driver = _import_driver(os.getenv('NAMEGEN_DRIVER'))
     driver.start()
 
 

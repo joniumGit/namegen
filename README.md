@@ -3,30 +3,117 @@
 #### Two drivers are available:
 
 - SQLite - persists as sqlite database
-    - Might be safer storage and portable
+    - Safe storage
     - Slow
+    - Crash Resistant
+        - Safe if crash happens outside a call
+        - Relies on rollback if crash happens in call
 - Memory - persists as compressed file on disk
     - Saves as compressed file on disk
-    - Not as portable
+        - Perhaps not as portable
     - Much Faster
     - Constant memory use
+    - Not crash safe
 - Hybrid
     - Pretty much as fast as the memory one
     - Offloads saving to another thread (SQLite)
-    - Uses more memory
+    - Uses more and more memory
+    - Lags behind generation
+    - Not crash safe
+        - Saving lags behind
+    - Should be interoperable with SQLite driver
 
 #### Test
 
 - Coverage is 100%
-- Two tests are marked _skip_ because of comparatively long runtime
+- Full gen tests are marked _skip_ because of comparatively long runtime
     - These generate all values available
+
+#### TODO and Improvements
+
+- Add tests that test regaining state
+- Add driver for Redis or MariaDB for distributed use
+    - Going to be slower
+- Make hybrid model compress events
+    - Remove individual counts
+    - Save on interval and take the last event maybe
 
 #### Generation Speed
 
+This is not really relevant in actual use most probably, but shows the differences between the drivers. If the pool of
+words is a lot larger, then the memory usage will go up. The Hybrid driver will lag behind in saving the events and
+needs to catch up.
+
+```json
+{
+  "sqlite": {
+    "time": "31.05 ms",
+    "memory_increase": "0.27%",
+    "memory_maximum": "36.68 mb",
+    "memory_minimum": "36.59 mb"
+  },
+  "memory": {
+    "time": "0.48 ms",
+    "memory_increase": "0.00%",
+    "memory_maximum": "36.80 mb",
+    "memory_minimum": "36.80 mb"
+  },
+  "hybrid": {
+    "time": "0.64 ms",
+    "memory_increase": "0.09%",
+    "memory_maximum": "37.03 mb",
+    "memory_minimum": "37.00 mb"
+  },
+  "count": 1000
+}
 ```
-1000 Samples:
-- Memory: 0.5-0.8 ms
-- SQLite: 30-90 ms
+
+```json
+{
+  "sqlite": {
+    "time": "2218.99 ms",
+    "memory_increase": "0.80%",
+    "memory_maximum": "37.34 mb",
+    "memory_minimum": "37.04 mb"
+  },
+  "memory": {
+    "time": "40.61 ms",
+    "memory_increase": "0.00%",
+    "memory_maximum": "37.49 mb",
+    "memory_minimum": "37.49 mb"
+  },
+  "hybrid": {
+    "time": "49.99 ms",
+    "memory_increase": "27.42%",
+    "memory_maximum": "48.04 mb",
+    "memory_minimum": "37.70 mb"
+  },
+  "count": 100000
+}
+```
+
+```json
+{
+  "sqlite": {
+    "time": "21669.93 ms",
+    "memory_increase": "0.70%",
+    "memory_maximum": "37.50 mb",
+    "memory_minimum": "37.24 mb"
+  },
+  "memory": {
+    "time": "406.25 ms",
+    "memory_increase": "0.00%",
+    "memory_maximum": "37.65 mb",
+    "memory_minimum": "37.65 mb"
+  },
+  "hybrid": {
+    "time": "488.76 ms",
+    "memory_increase": "269.45%",
+    "memory_maximum": "139.71 mb",
+    "memory_minimum": "37.81 mb"
+  },
+  "count": 1000000
+}
 ```
 
 #### Notes
@@ -90,3 +177,21 @@ The combined generation limit is set by:
 
 After which the values will repeat.
 ```
+
+Previously used this to regain hybrid state instead of _rowid_
+
+````python
+# Regain state
+cnt = 0
+i = next_start
+j = next_end
+while len(unsorted) > 0:
+    for idx, item in enumerate(unsorted):
+        if i == item.start.id and j == item.end.id:
+            del unsorted[idx]
+            self.queue.append(item)
+            break
+    cnt += 1
+    i = i + 1 if i < max_start else 1
+    j = j + 1 if j < max_end else 1
+````

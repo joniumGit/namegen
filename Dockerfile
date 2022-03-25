@@ -11,7 +11,7 @@ FROM python:3.10-alpine
 COPY --from=worker /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /opt/namegen
-COPY ./wordlist.txt .
+COPY ./wordlist.csv .
 
 RUN apk add --no-cache sqlite
 COPY ./db.sql .
