@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setuptools.setup(
     name='namegen',
-    version='2.0.0',
+    version='2.1.0',
     author='joniumGit',
     author_email='52005121+joniumGit@users.noreply.github.com',
     description='LCG Based Username Generator',

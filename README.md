@@ -1,6 +1,6 @@
 # Namegen
 
-#### Two drivers are available:
+#### Three drivers are available:
 
 - SQLite - persists as sqlite database
     - Safe storage
@@ -22,6 +22,29 @@
     - Not crash safe
         - Saving lags behind
     - Should be interoperable with SQLite driver
+
+#### Environment Variables
+
+```text
+The workdir in Dockerfile is /opt/namegen
+
+NAMEGEN_FILE ( default: wordlist.csv )
+- This file specifies names for generation
+
+NAMEGEN_DB_FILE ( default: namegen.db )
+- Database file for namegen
+- Hybrid and SQLite drivers only
+
+NAMEGEN_MEMORY_STATE ( default: namegen_memory_state )
+- Memory driver state file
+- Memory driver only
+
+NAMEGEN_DRIVER ( default: hybrid )
+- Options: memory, sqlite
+- Defines which driver is user
+- Server only
+```
+
 
 #### Test
 
