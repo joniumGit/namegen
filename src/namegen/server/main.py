@@ -42,23 +42,19 @@ driver: Driver
 class Name(BaseModel):
     value: constr(strip_whitespace=True, regex=r'\w+#\d{4}')
 
+    class Config:
+        schema_extra = {
+            'example': {
+                'value': 'CoolSquirrel#3713'
+            }
+        }
+
 
 @app.get(
     '/',
     name='name',
     response_model=Name,
-    responses={
-        200: {
-            'description': 'Success',
-            'value': {
-                'example': {
-                    'application/json': {
-                        'value': 'CoolSquirrel#3713'
-                    }
-                }
-            }
-        }
-    },
+    status_code=200,
     tags=["Namegen"],
 )
 async def get_name():
